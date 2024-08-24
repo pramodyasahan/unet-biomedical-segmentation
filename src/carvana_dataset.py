@@ -13,12 +13,12 @@ class CarvanaDataset(Dataset):
             self.images = sorted(
                 [root_dir + "/manual_test_mask/" + i for i in os.listdir(root_dir + "/manual_test_mask/")])
         else:
-            self.images = sorted([root_dir + "/train/" + i for i in os.listdir(root_dir + "/train/")])
-            self.images = sorted([root_dir + "/train_mask/" + i for i in os.listdir(root_dir + "/train_mask/")])
+            self.images = sorted([root_dir + "train/" + i for i in os.listdir(root_dir + "train/")])
+            self.images = sorted([root_dir + "train_mask/" + i for i in os.listdir(root_dir + "train_mask/")])
 
         self.transform = transforms.Compose([
             transforms.ToTensor(),
-            transforms.Resize((512, 512))
+            transforms.Resize((512, 512), antialias=True)
         ])
 
     def __getitem__(self, index):
