@@ -5,6 +5,11 @@
 
 This repository contains an implementation of the U-Net architecture for biomedical image segmentation, inspired by the seminal paper ["U-Net: Convolutional Networks for Biomedical Image Segmentation"](https://arxiv.org/abs/1505.04597) by Olaf Ronneberger, Philipp Fischer, and Thomas Brox.
 
+I’ve written a detailed article on Medium that explains the UNet model in-depth, including its implementation in Python. You can read it here:
+
+[Understanding and Implementing the UNet Model]([https://medium.com/your-article-link](https://medium.com/@pramodyasahan.edu/understanding-and-implementing-the-unet-model-for-biomedical-image-segmentation-abedfd3be3d7)) on Medium.
+
+
 ## Overview
 
 The U-Net architecture is a convolutional neural network designed for precise segmentation of biomedical images. It consists of a contracting path to capture context and a symmetric expanding path that enables precise localization. This implementation is based on the original paper and is adapted for the Carvana Image Masking Challenge dataset.
