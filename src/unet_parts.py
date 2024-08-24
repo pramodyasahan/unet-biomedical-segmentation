@@ -27,3 +27,16 @@ class DownSample(nn.Module):
         p = self.max_pool(down_sample)
 
         return down_sample, p
+
+
+class UpSample(nn.Module):
+    def __init__(self, in_channels, out_channels):
+        super().__init__()
+        self.up = nn.ConvTranspose2d(in_channels, out_channels // 2, kernel_size=2, stride=2)
+        self.conv = DoubleConv(in_channels, out_channels)
+
+    def forward(self, x1, x2):
+        x1 = self.up(x1)
+        x = torch.cat([x1, x2], dim=1)
+
+        return self.conv(x)
