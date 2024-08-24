@@ -7,7 +7,7 @@ This repository contains an implementation of the U-Net architecture for biomedi
 
 I’ve written a detailed article on Medium that explains the UNet model in-depth, including its implementation in Python. You can read it here:
 
-[Understanding and Implementing the UNet Model]([https://medium.com/@pramodyasahan.edu/understanding-and-implementing-the-unet-model-for-biomedical-image-segmentation-abedfd3be3d7]) on Medium.
+[Understanding and Implementing the UNet Model](https://medium.com/@pramodyasahan.edu/understanding-and-implementing-the-unet-model-for-biomedical-image-segmentation-abedfd3be3d7) on Medium.
 
 
 ## Overview
