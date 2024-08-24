@@ -16,3 +16,14 @@ class DoubleConv(nn.Module):
         return self.double_conv(x)
 
 
+class DownSample(nn.Module):
+    def __init__(self, in_channels, out_channels):
+        super().__init__()
+        self.conv = DoubleConv(in_channels, out_channels)
+        self.max_pool = nn.MaxPool2d(kernel_size=2, stride=2)
+
+    def forward(self, x):
+        down_sample = self.conv(x)
+        p = self.max_pool(down_sample)
+
+        return down_sample, p
