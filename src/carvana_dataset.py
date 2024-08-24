@@ -18,7 +18,7 @@ class CarvanaDataset(Dataset):
 
         self.transform = transforms.Compose([
             transforms.ToTensor(),
-            transforms.Resize((512, 512), antialias=True)
+            transforms.Resize((256, 256), antialias=True)
         ])
 
     def __getitem__(self, index):
