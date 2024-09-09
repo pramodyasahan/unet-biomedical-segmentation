@@ -1,24 +1,74 @@
 import torch
+import os
 from torch import nn, optim
-from utils import calculate_accuracy
+from utils import compute_dice, loss_curves, accuracy_curves
 from torch.utils.data import DataLoader, random_split
 from tqdm import tqdm
 
 from unet import UNetWithSelfAttention
 from dataloader import Dataloader
 
+
+def train_one_epoch(model, dataloader, optimizer, criterion, device):
+    model.train()
+    running_loss = 0
+    running_dice = 0
+
+    for img, mask in tqdm(dataloader, desc="Training"):
+        img, mask = img.float().to(device), mask.float().to(device)
+        optimizer.zero_grad()
+
+        y_pred = model(img)
+        loss = criterion(y_pred, mask)
+        loss.backward()
+        optimizer.step()
+
+        running_loss += loss.item()
+        running_dice += compute_dice(y_pred, mask).item()
+
+    avg_loss = running_loss / len(dataloader)
+    avg_dice = running_dice / len(dataloader)
+
+    return avg_loss, avg_dice
+
+
+def validate_one_epoch(model, dataloader, criterion, device):
+    model.eval()
+    running_loss = 0
+    running_dice = 0
+
+    with torch.no_grad():
+        for img, mask in tqdm(dataloader, desc="Validation"):
+            img, mask = img.float().to(device), mask.float().to(device)
+
+            y_pred = model(img)
+            loss = criterion(y_pred, mask)
+
+            running_loss += loss.item()
+            running_dice += compute_dice(y_pred, mask).item()
+
+    avg_loss = running_loss / len(dataloader)
+    avg_dice = running_dice / len(dataloader)
+
+    return avg_loss, avg_dice
+
+
 if __name__ == '__main__':
-    LEARNING_RATE = 3e-4
-    BATCH_SIZE = 8
-    EPOCHS = 2
+    LEARNING_RATE = 1e-4
+    BATCH_SIZE = 16
+    EPOCHS = 10
     DATA_DIR = 'data/'
-    MODEL_SAVE_PATH = '/unet.pth'
+
+    SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+    MODEL_SAVE_PATH = os.path.join(SCRIPT_DIR, 'trained_models', 'unet2.pth')
+
+    # Ensure the directory exists
+    os.makedirs(os.path.dirname(MODEL_SAVE_PATH), exist_ok=True)
 
     train_losses = []
     val_losses = []
-    train_accuracies = []
-    val_accuracies = []
-    dice_coefficients = []
+    train_dices = []
+    val_dices = []
 
     device = 'cuda' if torch.cuda.is_available() else 'cpu'
     print(f"Using device: {device}")
@@ -34,59 +84,28 @@ if __name__ == '__main__':
     optimizer = optim.AdamW(model.parameters(), lr=LEARNING_RATE)
     criterion = nn.BCEWithLogitsLoss()
 
-    for epoch in tqdm(range(EPOCHS)):
-        model.train()
-        train_running_loss = 0
-        train_running_accuracy = 0
-        for idx, img_mask in enumerate(tqdm(train_dataloader, desc=f"Training Epoch {epoch + 1}")):
-            img = img_mask[0].float().to(device)
-            mask = img_mask[1].float().to(device)
+    for epoch in range(EPOCHS):
+        print(f"Epoch {epoch + 1}/{EPOCHS}\n")
 
-            y_pred = model(img)
-            optimizer.zero_grad()
-
-            loss = criterion(y_pred, mask)
-            train_running_loss += loss.item()
-
-            accuracy = calculate_accuracy(y_pred, mask)
-            train_running_accuracy += accuracy.item()
-
-            loss.backward()
-            optimizer.step()
-
-        train_loss = train_running_loss / len(train_dataloader)
-        train_accuracy = train_running_accuracy / len(train_dataloader)
+        train_loss, train_dice = train_one_epoch(model, train_dataloader, optimizer, criterion, device)
+        val_loss, val_dice = validate_one_epoch(model, val_dataloader, criterion, device)
 
         train_losses.append(train_loss)
-        train_accuracies.append(train_accuracy)
+        val_losses.append(val_loss)
+        train_dices.append(train_dice)
+        val_dices.append(val_dice)
 
-        model.eval()
-        val_running_loss = 0
-        val_running_accuracy = 0
+        print("-" * 50)
+        print(f"Train Loss: {train_loss:.4f} | Train Dice: {train_dice:.4f}  |")
+        print(f"Val Loss: {val_loss:.4f} | Val Dice: {val_dice:.4f}        |")
+        print("-" * 50)
 
-        with torch.no_grad():
-            for idx, img_mask in enumerate(tqdm(val_dataloader, desc=f"Validation Epoch {epoch + 1}")):
-                img = img_mask[0].float().to(device)
-                mask = img_mask[1].float().to(device)
-
-                y_pred = model(img)
-                loss = criterion(y_pred, mask)
-                val_running_loss += loss.item()
-
-                accuracy = calculate_accuracy(y_pred, mask)
-                val_running_accuracy += accuracy.item()
-
-            val_loss = val_running_loss / len(val_dataloader)
-            val_accuracy = val_running_accuracy / len(val_dataloader)
-
-            val_losses.append(val_loss)
-            val_accuracies.append(val_accuracy)
-
-        print("-" * 30)
-        print(
-            f"Train Loss Epoch {epoch + 1} : {train_loss:.4f} | Train Accuracy Epoch {epoch + 1} : {train_accuracy:.4f}")
-        print(f"Val Loss Epoch {epoch + 1} : {val_loss:.4f} | Val Accuracy Epoch {epoch + 1} : {val_accuracy:.4f}")
-        print("-" * 30)
+    loss_curves(EPOCHS, train_losses, val_losses)
+    accuracy_curves(EPOCHS, train_dices, val_dices)
 
     torch.save(model.state_dict(), MODEL_SAVE_PATH)
-    print(f"Model saved to {MODEL_SAVE_PATH}")
+    if os.path.isfile(MODEL_SAVE_PATH):
+        print(f"Model successfully saved to {MODEL_SAVE_PATH}")
+    else:
+        print(f"Failed to save the model. File does not exist at {MODEL_SAVE_PATH}")
+
