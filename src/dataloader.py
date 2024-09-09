@@ -29,8 +29,10 @@ class Dataloader(Dataset):
             print(f"Data loaded")
 
         self.transform = transforms.Compose([
+            transforms.Resize((256, 256)),
+            transforms.RandomHorizontalFlip(p=0.5),
+            transforms.RandomRotation(degrees=30),
             transforms.ToTensor(),
-            transforms.Resize((256, 256), antialias=True)
         ])
 
     def __getitem__(self, index):
